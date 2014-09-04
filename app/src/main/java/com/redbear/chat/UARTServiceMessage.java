@@ -16,18 +16,21 @@ final public class UARTServiceMessage {
     public static final short REQ_SUBS		= 1;
     public static final short REQ_WRITE		= 2;
 
-    public static final short RSP_OK		= 20;
-    public static final short RSP_SRV_NA	= 21;
-    public static final short RSP_SRV_AL	= 32;
-    public static final short RSP_READ		= 33;
-    public static final short RSP_WRT		= 34;
-    public static final short RSP_SUBS	    = 35;
+    public static final byte RSP_OK		    = 0x1E;
+    public static final byte RSP_SRV_NA	    = 0x1F;
+    public static final byte RSP_SRV_AL	    = 0x20;
+    public static final byte RSP_READ		= 0x21;
+    public static final byte RSP_WRT		= 0x22;
+    public static final byte RSP_SUBS	    = 0x23;
 
     private static final long serialVersionUID = 8887772353469343890L;
     private static final String TAG = "UARTServiceMessage";
-    private int HEADER_UUID_FROM_UINT16T;
+    private short HEADER_UUID_FROM_UINT16T;
     private byte HEADER_TYPE_FROM_UINT8T;
     private byte PACKET_DATA_LEN_FROM_UINT8T;
+
+
+
     private byte[] DATA;
     private ByteBuffer INTERNAL_PACKET;
 
@@ -41,7 +44,7 @@ final public class UARTServiceMessage {
             while (INTERNAL_PACKET.hasRemaining()) {
                 byte[] b = new byte[2];
                 INTERNAL_PACKET.get(b ,0,2);
-                HEADER_UUID_FROM_UINT16T = unsignedIntFromByteArray(b);
+                HEADER_UUID_FROM_UINT16T = INTERNAL_PACKET.getShort();
                 HEADER_TYPE_FROM_UINT8T = INTERNAL_PACKET.get();
                 PACKET_DATA_LEN_FROM_UINT8T = INTERNAL_PACKET.get();
                 //TODO: buffer need to be fixed here
@@ -61,6 +64,17 @@ final public class UARTServiceMessage {
         Log.d(TAG, "DATA LENGTH " + String.valueOf(PACKET_DATA_LEN_FROM_UINT8T));
 
     }
+    public UARTServiceMessage(short HEADER_UUID_FROM_UINT16T, byte HEADER_TYPE_FROM_UINT8T, byte PACKET_DATA_LEN_FROM_UINT8T, byte[] DATA) {
+        this.HEADER_UUID_FROM_UINT16T = HEADER_UUID_FROM_UINT16T;
+        this.HEADER_TYPE_FROM_UINT8T = HEADER_TYPE_FROM_UINT8T;
+        this.PACKET_DATA_LEN_FROM_UINT8T = PACKET_DATA_LEN_FROM_UINT8T;
+        this.DATA = DATA;
+        this.INTERNAL_PACKET = ByteBuffer.allocate(20);
+        this.INTERNAL_PACKET.putShort(HEADER_UUID_FROM_UINT16T);
+        this.INTERNAL_PACKET.put(HEADER_TYPE_FROM_UINT8T);
+        this.INTERNAL_PACKET.put(PACKET_DATA_LEN_FROM_UINT8T);
+        this.INTERNAL_PACKET.put(DATA);
+    }
 
     public byte[] getPacketByteArray(){
         return INTERNAL_PACKET.array();
@@ -74,7 +88,7 @@ final public class UARTServiceMessage {
         return HEADER_UUID_FROM_UINT16T;
     }
 
-    public void setHEADER_UUID_FROM_UINT16T(int HEADER_UUID_FROM_UINT16T) {
+    public void setHEADER_UUID_FROM_UINT16T(short HEADER_UUID_FROM_UINT16T) {
         this.HEADER_UUID_FROM_UINT16T = HEADER_UUID_FROM_UINT16T;
     }
 
@@ -171,5 +185,9 @@ final public class UARTServiceMessage {
                 ", PACKET_DATA_LEN_FROM_UINT8T=" + PACKET_DATA_LEN_FROM_UINT8T +
                 ", DATA=" + Arrays.toString(DATA) +
                 '}';
+    }
+
+    public byte[] toBytes(){
+        return INTERNAL_PACKET.array();
     }
 }

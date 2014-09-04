@@ -1,5 +1,6 @@
 package com.redbear.chat;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,8 @@ public class Chat extends Activity {
 	private String mDeviceAddress;
 	private RBLService mBluetoothLeService;
 	private Map<UUID, BluetoothGattCharacteristic> mCharacteristicMap = new HashMap<UUID, BluetoothGattCharacteristic>();
+    private UARTServiceMessage mTXuartServiceMessage;
+    private int counter;
 
 	private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
@@ -80,7 +83,12 @@ public class Chat extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.second);
-
+        counter = 0;
+        mTXuartServiceMessage = new UARTServiceMessage((short)70,
+                                                        UARTServiceMessage.RSP_READ,
+                                                        (byte)0x4,
+                                                        ByteBuffer.allocate(4).putInt(counter).array()
+        );
 		tv = (TextView) findViewById(R.id.textView);
 		tv.setMovementMethod(ScrollingMovementMethod.getInstance());
 		et = (EditText) findViewById(R.id.editText);
@@ -106,14 +114,14 @@ public class Chat extends Activity {
                     for (int i = 1; i < tmp.length + 1; i++) {
                         tx[i] = tmp[i - 1];
                     }
-                    Log.d(TAG, new String(tx));
-                    characteristic.setValue(tx);
+                    Log.d(TAG, mTXuartServiceMessage.toString());
+                    characteristic.setValue(mTXuartServiceMessage.toBytes());
+                    counter++;
+                    mTXuartServiceMessage.setDATA(ByteBuffer.allocate(4).putInt(counter).array());
                     mBluetoothLeService.writeCharacteristic(characteristic);
                 } else {
                     Log.d(TAG, "str is null!");
                 }
-
-
 				et.setText("");
 			}
 		});
